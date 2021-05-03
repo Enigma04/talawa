@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
-
 //pages are imported here
 import 'package:talawa/services/preferences.dart';
 import 'package:talawa/utils/timer.dart';
@@ -49,7 +48,7 @@ class _EventsState extends State<Events> {
   Future<void> events;
   Timer timer = Timer();
   String userId;
-  ScrollController listScrollController = ScrollController();
+  ScrollController listScrollController  = ScrollController();
 
   FToast fToast;
 
@@ -114,10 +113,10 @@ class _EventsState extends State<Events> {
       } else {
         if (event['recurrance'] == 'DAILY') {
           int day = DateTime.fromMicrosecondsSinceEpoch(
-                  int.parse(event['startTime'].toString()))
+              int.parse(event['startTime'].toString()))
               .day;
           final int lastday = DateTime.fromMicrosecondsSinceEpoch(
-                  int.parse(event['endTime'].toString()))
+              int.parse(event['endTime'].toString()))
               .day;
           while (day <= lastday) {
             addDateToMap(DateTime(now.year, now.month, day), event as Map);
@@ -126,10 +125,10 @@ class _EventsState extends State<Events> {
         }
         if (event['recurrance'] == 'WEEKLY') {
           int day = DateTime.fromMicrosecondsSinceEpoch(
-                  int.parse(event['startTime'].toString()))
+              int.parse(event['startTime'].toString()))
               .day;
           final int lastday = DateTime.fromMicrosecondsSinceEpoch(
-                  int.parse(event['endTime'].toString()))
+              int.parse(event['endTime'].toString()))
               .day;
           while (day <= lastday) {
             addDateToMap(DateTime(now.year, now.month, day), event as Map);
@@ -156,58 +155,54 @@ class _EventsState extends State<Events> {
     return eventDates;
   }
 
-  //function called to delete the event
-  Future<void> _deleteEvent(BuildContext context, String eventId) async {
-    showProgress(context, 'Deleting Event . . .', isDismissible: false);
-    final String mutation = Queries().deleteEvent(eventId);
-    final Map result = await apiFunctions.gqlquery(mutation);
-    if (result["exception"] != null) {
-      _exceptionToast("Could not delete event! Please try again later");
-    }
-    await getEvents();
-    hideProgress();
-  }
-
-  //function to called be called for register
-  Future<void> _register(BuildContext context, String eventId) async {
-    final Map result = await Queries().registerForEvent(eventId) as Map;
-    print(result);
-  }
-
   //function to get the events
   Future<void> getEvents() async {
     final String currentOrgID = await preferences.getCurrentOrgId();
     _currOrgId = currentOrgID;
     final Map result =
-        await apiFunctions.gqlquery(Queries().fetchOrgEvents(currentOrgID));
+    await apiFunctions.gqlquery(Queries().fetchOrgEvents(currentOrgID));
     eventList =
         result == null ? [] : (result['events'] as List).reversed.toList();
     eventList.removeWhere((element) =>
-        element['title'] == 'Talawa Congress' ||
-        element['title'] == 'test' ||
-        element['title'] == 'Talawa Conference Test' ||
-        element['title'] == 'mayhem' ||
-        element['title'] == 'mayhem1' ||
-        element['organization']['_id'] !=
-            currentOrgID); //dont know who keeps adding these
+    element['title'] == 'Talawa Congress' ||
+    element['title'] == 'test' ||
+    element['title'] == 'Talawa Conference Test' ||
+    element['title'] == 'mayhem' ||
+    element['title'] == 'mayhem1' ||
+    element['organization']['_id'] !=
+    currentOrgID); //dont know who keeps adding these
     // This removes all invalid date formats other than Unix time
     eventList.removeWhere(
-        (element) => int.tryParse(element['startTime'] as String) == null);
+    (element) => int.tryParse(element['startTime'] as String) == null);
     eventList.sort((a, b) {
-      return DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(a['startTime'] as String))
-          .compareTo(DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(b['startTime'] as String)));
+    return DateTime.fromMicrosecondsSinceEpoch(
+    int.parse(a['startTime'] as String))
+        .compareTo(DateTime.fromMicrosecondsSinceEpoch(
+    int.parse(b['startTime'] as String)));
     });
     eventsToDates(eventList, DateTime.now());
     setState(() {
-      displayedEvents = eventList;
+    displayedEvents = eventList;
     });
     userId = await preferences.getUserId();
   }
+  //function to delete event
+  Future<void> deleteEvent(BuildContext context, String eventId) async {
+    showProgress(context, 'Deleting Event . . .', isDismissible: false);
+    final String mutation = Queries().deleteEvent(eventId);
+    await apiFunctions.gqlquery(mutation);
+    await getEvents();
+    hideProgress();
+  }
+
+  //function to called be called for register
+  Future<void> register(BuildContext context, String eventId) async {
+    final Map result = await Queries().registerForEvent(eventId) as Map;
+    print(result);
+  }
 
   //functions to edit the event
-  Future<void> _editEvent(BuildContext context, Map event) async {
+  Future<void> editEvent(BuildContext context, Map event) async {
     if (event['creator']['_id'] != userId) {
       Fluttertoast.showToast(msg: "You cannot edit events you didn't create");
     } else {
@@ -240,7 +235,7 @@ class _EventsState extends State<Events> {
             style: TextStyle(color: Colors.white),
           ),
         ),
-        floatingActionButton: eventFab(),
+        floatingActionButton: eventFab(context: context),
         body: FutureBuilder(
           future: events,
           // ignore: missing_return
@@ -253,7 +248,7 @@ class _EventsState extends State<Events> {
                       try {
                         await getEvents();
                       } catch (e) {
-                        _exceptionToast(e.toString());
+                       _exceptionToast(e.toString());
                       }
                     },
                     child: CustomScrollView(
@@ -269,13 +264,13 @@ class _EventsState extends State<Events> {
                           header: carouselSliderBar(),
                           sliver: const SliverFillRemaining(
                               child: Center(
-                            child: Text(
-                              'No Event Created',
-                              style: TextStyle(
-                                fontSize: 15.0,
-                              ),
-                            ),
-                          )),
+                                child: Text(
+                                  'No Event Created',
+                                  style: TextStyle(
+                                    fontSize: 15.0,
+                                  ),
+                                ),
+                              )),
                         ),
                       ],
                     ));
@@ -319,30 +314,33 @@ class _EventsState extends State<Events> {
                                           return TimelineModel(
                                             Column(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.center,
+                                              MainAxisAlignment.center,
                                               children: [
                                                 Container(
                                                   padding: EdgeInsets.symmetric(
                                                       vertical: SizeConfig
-                                                              .safeBlockVertical *
+                                                          .safeBlockVertical *
                                                           0.625),
                                                   child: Text(
                                                     '${displayedEvents.length} Events',
                                                     style: const TextStyle(
-                                                        color: Colors.black45),
+                                                        color:
+                                                        Colors.black45),
                                                   ),
                                                 ),
                                                 eventCard(index)
                                               ],
                                             ),
                                             iconBackground:
-                                                UIData.secondaryColor,
+                                            UIData.secondaryColor,
                                           );
                                         }
                                         return TimelineModel(
                                           eventCard(index),
-                                          iconBackground: UIData.secondaryColor,
-                                          position: TimelineItemPosition.right,
+                                          iconBackground:
+                                          UIData.secondaryColor,
+                                          position:
+                                          TimelineItemPosition.right,
                                         );
                                       },
                                     ),
@@ -359,8 +357,8 @@ class _EventsState extends State<Events> {
               print(snapshot.data);
               return Center(
                   child: Loading(
-                key: UniqueKey(),
-              ));
+                    key: UniqueKey(),
+                  ));
             } else if (state == ConnectionState.none) {
               return const Text('Could Not Fetch Data.');
             }
@@ -456,9 +454,9 @@ class _EventsState extends State<Events> {
   Widget menueText(String text) {
     return ListTile(
         title: Text(
-      text,
-      style: TextStyle(color: Colors.grey[700]),
-    ));
+          text,
+          style: TextStyle(color: Colors.grey[700]),
+        ));
   }
 
   Widget eventCard(int index) {
@@ -485,11 +483,12 @@ class _EventsState extends State<Events> {
               displayedEvents[index]['isRegistered'] as bool
                   ? menueText('You Are Registered')
                   : menueText('You Are Not Registered'),
+
               ListTile(
                 trailing: ElevatedButton(
                   style: ButtonStyle(
                     backgroundColor:
-                        MaterialStateProperty.all<Color>(UIData.secondaryColor),
+                    MaterialStateProperty.all<Color>(UIData.secondaryColor),
                     shape: MaterialStateProperty.all<OutlinedBorder>(
                         const StadiumBorder()),
                   ),
@@ -522,13 +521,13 @@ class _EventsState extends State<Events> {
     return PopupMenuButton<int>(
       onSelected: (val) async {
         if (val == 1) {
-          return _register(context, event['_id'].toString());
+          return register(context, event['_id'].toString());
         } else if (val == 2) {
           return addEventTask(context, event['_id'].toString());
         } else if (val == 3) {
-          return _editEvent(context, event as Map);
+          return editEvent(context, event as Map);
         } else if (val == 4) {
-          return _deleteEvent(context, event['_id'].toString());
+          return deleteEvent(context, event['_id'].toString());
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
@@ -572,23 +571,6 @@ class _EventsState extends State<Events> {
     );
   }
 
-  Widget eventFab() {
-    return FloatingActionButton(
-      backgroundColor: UIData.secondaryColor,
-      onPressed: () {
-        pushNewScreen(
-          context,
-          withNavBar: true,
-          screen: const AddEvent(),
-        );
-      },
-      child: const Icon(
-        Icons.add,
-        color: Colors.white,
-      ),
-    );
-  }
-
   //function to show exceptions
   _exceptionToast(String msg) {
     final Widget toast = Container(
@@ -611,4 +593,22 @@ class _EventsState extends State<Events> {
       toastDuration: const Duration(seconds: 1),
     );
   }
+
+  Widget eventFab({BuildContext context}) {
+    return FloatingActionButton(
+      backgroundColor: UIData.secondaryColor,
+      onPressed: () {
+        pushNewScreen(
+          context,
+          withNavBar: true,
+          screen: const AddEvent(),
+        );
+      },
+      child: const Icon(
+        Icons.add,
+        color: Colors.white,
+      ),
+    );
+  }
+
 }
