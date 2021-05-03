@@ -10,11 +10,11 @@ import 'package:provider/provider.dart';
 import 'package:talawa/controllers/auth_controller.dart';
 import 'package:talawa/services/queries_.dart';
 import 'package:talawa/services/preferences.dart';
+import 'package:talawa/utils/custom_toast.dart';
 import 'package:talawa/utils/gql_client.dart';
 import 'package:talawa/utils/globals.dart';
 import 'package:talawa/utils/ui_scaling.dart';
 import 'package:talawa/utils/uidata.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:talawa/views/pages/home_page.dart';
 import 'package:talawa/views/pages/organization/profile_page.dart';
 import 'package:talawa/views/widgets/loading.dart';
@@ -35,7 +35,6 @@ class _JoinOrganizationState extends State<JoinOrganization> {
   String token;
   static String itemIndex;
   GraphQLConfiguration graphQLConfiguration = GraphQLConfiguration();
-  FToast fToast;
   List organizationInfo = [];
   List filteredOrgInfo = [];
   List joinedOrg = [];
@@ -56,8 +55,6 @@ class _JoinOrganizationState extends State<JoinOrganization> {
   void initState() {
     //creating the initial state for all the variables
     super.initState();
-    fToast = FToast();
-    fToast.init(context);
     fetchOrg();
   }
 
@@ -152,10 +149,10 @@ class _JoinOrganizationState extends State<JoinOrganization> {
       return joinPrivateOrg();
     } else if (result.hasException &&
         result.exception.toString().substring(16) != accessTokenException) {
-      _exceptionToast(result.exception.toString().substring(16));
+      CustomToast.exceptionToast(msg: result.exception.toString());
     } else if (!result.hasException && !result.loading) {
       print(result.data);
-      _successToast("Request Sent to Organization Admin");
+      CustomToast.sucessToast(msg: "Request Sent to Organization Admin");
 
       if (widget.fromProfile) {
         Navigator.pop(context);
@@ -181,10 +178,10 @@ class _JoinOrganizationState extends State<JoinOrganization> {
     if (result.hasException &&
         result.exception.toString().substring(16) == accessTokenException) {
       _authController.getNewToken();
-      _exceptionToast(result.exception.toString().substring(16));
+      CustomToast.exceptionToast(msg: result.exception.toString());
     } else if (result.hasException &&
         result.exception.toString().substring(16) != accessTokenException) {
-      _exceptionToast(result.exception.toString().substring(16));
+      CustomToast.exceptionToast(msg: result.exception.toString());
     } else if (!result.hasException && !result.loading) {
       setState(() {
         joinedOrg = result.data['joinPublicOrganization']['joinedOrganizations']
@@ -226,7 +223,7 @@ class _JoinOrganizationState extends State<JoinOrganization> {
           }
         }
       }
-      _successToast("Success!");
+      CustomToast.sucessToast(msg: "Success!");
 
       //Navigate user to newsfeed
       if (widget.fromProfile) {
@@ -254,7 +251,7 @@ class _JoinOrganizationState extends State<JoinOrganization> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Join Organization',
-            style: TextStyle(color: Colors.white)),
+            style: const TextStyle(color: Colors.white)),
       ),
       body: organizationInfo.isEmpty
           ? Center(
@@ -270,7 +267,7 @@ class _JoinOrganizationState extends State<JoinOrganization> {
                 children: <Widget>[
                   const Text(
                     "Welcome, \nJoin or Create your organization to get started",
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: Colors.black,
                         fontSize: 18,
                         fontStyle: FontStyle.normal),
@@ -300,8 +297,8 @@ class _JoinOrganizationState extends State<JoinOrganization> {
                               const BorderSide(color: Colors.white, width: 0.0),
                         ),
                         prefixIcon: const Padding(
-                          padding: EdgeInsets.all(0.0),
-                          child: Icon(Icons.search, color: Colors.black),
+                          padding: const EdgeInsets.all(0.0),
+                          child: const Icon(Icons.search, color: Colors.black),
                         ),
                         hintText: "Search Organization Name"),
                   ),
@@ -578,6 +575,7 @@ class _JoinOrganizationState extends State<JoinOrganization> {
                 ],
               )),
       floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
         backgroundColor: UIData.secondaryColor,
         foregroundColor: Colors.white,
         elevation: 5.0,
@@ -587,7 +585,6 @@ class _JoinOrganizationState extends State<JoinOrganization> {
                     isFromProfile: widget.fromProfile,
                   )));
         },
-        child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -684,49 +681,6 @@ class _JoinOrganizationState extends State<JoinOrganization> {
         style: const TextStyle(fontSize: 16),
         textAlign: TextAlign.center,
       ),
-    );
-  }
-
-  _successToast(String msg) {
-    final Widget toast = Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: SizeConfig.safeBlockHorizontal * 5,
-          vertical: SizeConfig.safeBlockVertical * 1.5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: Colors.green,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(msg),
-        ],
-      ),
-    );
-
-    fToast.showToast(
-      child: toast,
-      gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 3),
-    );
-  }
-
-  _exceptionToast(String msg) {
-    final Widget toast = Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: SizeConfig.safeBlockHorizontal * 6,
-          vertical: SizeConfig.safeBlockVertical * 1.75),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: Colors.red,
-      ),
-      child: Text(msg),
-    );
-
-    fToast.showToast(
-      child: toast,
-      gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 3),
     );
   }
 }

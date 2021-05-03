@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+
 //pages are imported here
 import 'package:talawa/services/preferences.dart';
+import 'package:talawa/utils/custom_toast.dart';
 import 'package:talawa/utils/timer.dart';
 import 'package:talawa/utils/ui_scaling.dart';
 import 'package:talawa/utils/uidata.dart';
@@ -48,9 +50,7 @@ class _EventsState extends State<Events> {
   Future<void> events;
   Timer timer = Timer();
   String userId;
-  ScrollController listScrollController  = ScrollController();
-
-  FToast fToast;
+  ScrollController listScrollController = ScrollController();
 
   //variable for organization Id
   String _currOrgId;
@@ -113,10 +113,10 @@ class _EventsState extends State<Events> {
       } else {
         if (event['recurrance'] == 'DAILY') {
           int day = DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(event['startTime'].toString()))
+                  int.parse(event['startTime'].toString()))
               .day;
           final int lastday = DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(event['endTime'].toString()))
+                  int.parse(event['endTime'].toString()))
               .day;
           while (day <= lastday) {
             addDateToMap(DateTime(now.year, now.month, day), event as Map);
@@ -125,10 +125,10 @@ class _EventsState extends State<Events> {
         }
         if (event['recurrance'] == 'WEEKLY') {
           int day = DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(event['startTime'].toString()))
+                  int.parse(event['startTime'].toString()))
               .day;
           final int lastday = DateTime.fromMicrosecondsSinceEpoch(
-              int.parse(event['endTime'].toString()))
+                  int.parse(event['endTime'].toString()))
               .day;
           while (day <= lastday) {
             addDateToMap(DateTime(now.year, now.month, day), event as Map);
@@ -155,54 +155,59 @@ class _EventsState extends State<Events> {
     return eventDates;
   }
 
-  //function to get the events
-  Future<void> getEvents() async {
-    final String currentOrgID = await preferences.getCurrentOrgId();
-    _currOrgId = currentOrgID;
-    final Map result =
-    await apiFunctions.gqlquery(Queries().fetchOrgEvents(currentOrgID));
-    eventList =
-        result == null ? [] : (result['events'] as List).reversed.toList();
-    eventList.removeWhere((element) =>
-    element['title'] == 'Talawa Congress' ||
-    element['title'] == 'test' ||
-    element['title'] == 'Talawa Conference Test' ||
-    element['title'] == 'mayhem' ||
-    element['title'] == 'mayhem1' ||
-    element['organization']['_id'] !=
-    currentOrgID); //dont know who keeps adding these
-    // This removes all invalid date formats other than Unix time
-    eventList.removeWhere(
-    (element) => int.tryParse(element['startTime'] as String) == null);
-    eventList.sort((a, b) {
-    return DateTime.fromMicrosecondsSinceEpoch(
-    int.parse(a['startTime'] as String))
-        .compareTo(DateTime.fromMicrosecondsSinceEpoch(
-    int.parse(b['startTime'] as String)));
-    });
-    eventsToDates(eventList, DateTime.now());
-    setState(() {
-    displayedEvents = eventList;
-    });
-    userId = await preferences.getUserId();
-  }
-  //function to delete event
-  Future<void> deleteEvent(BuildContext context, String eventId) async {
+  //function called to delete the event
+  Future<void> _deleteEvent(BuildContext context, String eventId) async {
     showProgress(context, 'Deleting Event . . .', isDismissible: false);
     final String mutation = Queries().deleteEvent(eventId);
-    await apiFunctions.gqlquery(mutation);
+    final Map result = await apiFunctions.gqlquery(mutation);
+    if (result["exception"] != null) {
+      CustomToast.exceptionToast(
+          msg: "Could not delete event! Please try again later");
+    }
     await getEvents();
     hideProgress();
   }
 
   //function to called be called for register
-  Future<void> register(BuildContext context, String eventId) async {
+  Future<void> _register(BuildContext context, String eventId) async {
     final Map result = await Queries().registerForEvent(eventId) as Map;
     print(result);
   }
 
+  //function to get the events
+  Future<void> getEvents() async {
+    final String currentOrgID = await preferences.getCurrentOrgId();
+    _currOrgId = currentOrgID;
+    final Map result =
+        await apiFunctions.gqlquery(Queries().fetchOrgEvents(currentOrgID));
+    eventList =
+        result == null ? [] : (result['events'] as List).reversed.toList();
+    eventList.removeWhere((element) =>
+        element['title'] == 'Talawa Congress' ||
+        element['title'] == 'test' ||
+        element['title'] == 'Talawa Conference Test' ||
+        element['title'] == 'mayhem' ||
+        element['title'] == 'mayhem1' ||
+        element['organization']['_id'] !=
+            currentOrgID); //dont know who keeps adding these
+    // This removes all invalid date formats other than Unix time
+    eventList.removeWhere(
+        (element) => int.tryParse(element['startTime'] as String) == null);
+    eventList.sort((a, b) {
+      return DateTime.fromMicrosecondsSinceEpoch(
+              int.parse(a['startTime'] as String))
+          .compareTo(DateTime.fromMicrosecondsSinceEpoch(
+              int.parse(b['startTime'] as String)));
+    });
+    eventsToDates(eventList, DateTime.now());
+    setState(() {
+      displayedEvents = eventList;
+    });
+    userId = await preferences.getUserId();
+  }
+
   //functions to edit the event
-  Future<void> editEvent(BuildContext context, Map event) async {
+  Future<void> _editEvent(BuildContext context, Map event) async {
     if (event['creator']['_id'] != userId) {
       Fluttertoast.showToast(msg: "You cannot edit events you didn't create");
     } else {
@@ -232,10 +237,10 @@ class _EventsState extends State<Events> {
           key: const Key('EVENTS_APP_BAR'),
           title: const Text(
             'Events',
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
         ),
-        floatingActionButton: eventFab(context: context),
+        floatingActionButton: eventFab(),
         body: FutureBuilder(
           future: events,
           // ignore: missing_return
@@ -248,7 +253,7 @@ class _EventsState extends State<Events> {
                       try {
                         await getEvents();
                       } catch (e) {
-                       _exceptionToast(e.toString());
+                        CustomToast.exceptionToast(msg: e.toString());
                       }
                     },
                     child: CustomScrollView(
@@ -264,13 +269,13 @@ class _EventsState extends State<Events> {
                           header: carouselSliderBar(),
                           sliver: const SliverFillRemaining(
                               child: Center(
-                                child: Text(
-                                  'No Event Created',
-                                  style: TextStyle(
-                                    fontSize: 15.0,
-                                  ),
-                                ),
-                              )),
+                            child: Text(
+                              'No Event Created',
+                              style: TextStyle(
+                                fontSize: 15.0,
+                              ),
+                            ),
+                          )),
                         ),
                       ],
                     ));
@@ -280,7 +285,7 @@ class _EventsState extends State<Events> {
                       try {
                         await getEvents();
                       } catch (e) {
-                        _exceptionToast(e.toString());
+                        CustomToast.exceptionToast(msg: e.toString());
                       }
                     },
                     child: Container(
@@ -314,33 +319,30 @@ class _EventsState extends State<Events> {
                                           return TimelineModel(
                                             Column(
                                               mainAxisAlignment:
-                                              MainAxisAlignment.center,
+                                                  MainAxisAlignment.center,
                                               children: [
                                                 Container(
                                                   padding: EdgeInsets.symmetric(
                                                       vertical: SizeConfig
-                                                          .safeBlockVertical *
+                                                              .safeBlockVertical *
                                                           0.625),
                                                   child: Text(
                                                     '${displayedEvents.length} Events',
                                                     style: const TextStyle(
-                                                        color:
-                                                        Colors.black45),
+                                                        color: Colors.black45),
                                                   ),
                                                 ),
                                                 eventCard(index)
                                               ],
                                             ),
                                             iconBackground:
-                                            UIData.secondaryColor,
+                                                UIData.secondaryColor,
                                           );
                                         }
                                         return TimelineModel(
                                           eventCard(index),
-                                          iconBackground:
-                                          UIData.secondaryColor,
-                                          position:
-                                          TimelineItemPosition.right,
+                                          iconBackground: UIData.secondaryColor,
+                                          position: TimelineItemPosition.right,
                                         );
                                       },
                                     ),
@@ -357,8 +359,8 @@ class _EventsState extends State<Events> {
               print(snapshot.data);
               return Center(
                   child: Loading(
-                    key: UniqueKey(),
-                  ));
+                key: UniqueKey(),
+              ));
             } else if (state == ConnectionState.none) {
               return const Text('Could Not Fetch Data.');
             }
@@ -413,7 +415,7 @@ class _EventsState extends State<Events> {
                 items: [
                   const Text(
                     'All',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   Text(
                     dateSelected,
@@ -451,12 +453,50 @@ class _EventsState extends State<Events> {
         ));
   }
 
+  Widget eventListView() {
+    return displayedEvents.isEmpty
+        ? Center(
+            child: Loading(
+            key: UniqueKey(),
+          ))
+        : RefreshIndicator(
+            onRefresh: () async {
+              getEvents();
+            },
+            child: Timeline.builder(
+              lineColor: UIData.primaryColor,
+              position: TimelinePosition.Left,
+              itemCount: displayedEvents.length,
+              itemBuilder: (context, index) {
+                return index == 0
+                    ? TimelineModel(
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: Text(
+                                '${displayedEvents.length} Events',
+                                style: const TextStyle(color: Colors.black45),
+                              ),
+                            ),
+                            eventCard(index)
+                          ],
+                        ),
+                        iconBackground: UIData.secondaryColor)
+                    : TimelineModel(eventCard(index),
+                        iconBackground: UIData.secondaryColor,
+                        position: TimelineItemPosition.right);
+              },
+            ));
+  }
+
   Widget menueText(String text) {
     return ListTile(
         title: Text(
-          text,
-          style: TextStyle(color: Colors.grey[700]),
-        ));
+      text,
+      style: TextStyle(color: Colors.grey[700]),
+    ));
   }
 
   Widget eventCard(int index) {
@@ -483,12 +523,11 @@ class _EventsState extends State<Events> {
               displayedEvents[index]['isRegistered'] as bool
                   ? menueText('You Are Registered')
                   : menueText('You Are Not Registered'),
-
               ListTile(
                 trailing: ElevatedButton(
                   style: ButtonStyle(
                     backgroundColor:
-                    MaterialStateProperty.all<Color>(UIData.secondaryColor),
+                        MaterialStateProperty.all<Color>(UIData.secondaryColor),
                     shape: MaterialStateProperty.all<OutlinedBorder>(
                         const StadiumBorder()),
                   ),
@@ -501,7 +540,7 @@ class _EventsState extends State<Events> {
                   },
                   child: const Text(
                     "More",
-                    style: TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ),
@@ -521,94 +560,69 @@ class _EventsState extends State<Events> {
     return PopupMenuButton<int>(
       onSelected: (val) async {
         if (val == 1) {
-          return register(context, event['_id'].toString());
+          return _register(context, event['_id'].toString());
         } else if (val == 2) {
           return addEventTask(context, event['_id'].toString());
         } else if (val == 3) {
-          return editEvent(context, event as Map);
+          return _editEvent(context, event as Map);
         } else if (val == 4) {
-          return deleteEvent(context, event['_id'].toString());
+          return _deleteEvent(context, event['_id'].toString());
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
         const PopupMenuItem<int>(
             value: 1,
-            child: ListTile(
-              leading: Icon(Icons.playlist_add_check, color: Colors.grey),
-              title: Text(
+            child: const ListTile(
+              leading: const Icon(Icons.playlist_add_check, color: Colors.grey),
+              title: const Text(
                 'Register For Event',
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
             )),
         const PopupMenuItem<int>(
             value: 2,
-            child: ListTile(
-              leading: Icon(Icons.note_add, color: Colors.grey),
-              title: Text(
+            child: const ListTile(
+              leading: const Icon(Icons.note_add, color: Colors.grey),
+              title: const Text(
                 'Add a Task to this Event',
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
             )),
         const PopupMenuItem<int>(
             value: 3,
-            child: ListTile(
-              leading: Icon(Icons.edit, color: Colors.grey),
-              title: Text(
+            child: const ListTile(
+              leading: const Icon(Icons.edit, color: Colors.grey),
+              title: const Text(
                 'Edit this event',
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
             )),
         const PopupMenuItem<int>(
             value: 4,
-            child: ListTile(
-              leading: Icon(Icons.delete, color: Colors.grey),
-              title: Text(
+            child: const ListTile(
+              leading: const Icon(Icons.delete, color: Colors.grey),
+              title: const Text(
                 'Delete This Event',
-                style: TextStyle(color: Colors.black),
+                style: const TextStyle(color: Colors.black),
               ),
             ))
       ],
     );
   }
 
-  //function to show exceptions
-  _exceptionToast(String msg) {
-    final Widget toast = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: Colors.red,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(msg),
-        ],
-      ),
-    );
-
-    fToast.showToast(
-      child: toast,
-      gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 1),
-    );
-  }
-
-  Widget eventFab({BuildContext context}) {
+  Widget eventFab() {
     return FloatingActionButton(
-      backgroundColor: UIData.secondaryColor,
-      onPressed: () {
-        pushNewScreen(
-          context,
-          withNavBar: true,
-          screen: const AddEvent(),
-        );
-      },
-      child: const Icon(
-        Icons.add,
-        color: Colors.white,
-      ),
-    );
+        backgroundColor: UIData.secondaryColor,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+        onPressed: () {
+          pushNewScreen(
+            context,
+            withNavBar: true,
+            screen: AddEvent(),
+          );
+        });
   }
-
 }

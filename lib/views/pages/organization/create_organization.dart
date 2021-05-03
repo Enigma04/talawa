@@ -8,12 +8,12 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:talawa/controllers/auth_controller.dart';
 import 'package:talawa/enums/image_from.dart';
 import 'package:talawa/services/queries_.dart';
+import 'package:talawa/utils/custom_toast.dart';
 import 'package:talawa/utils/gql_client.dart';
 import 'package:talawa/utils/globals.dart';
 import 'package:talawa/utils/ui_scaling.dart';
 import 'package:talawa/utils/uidata.dart';
 import 'package:talawa/utils/validator.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:graphql/utilities.dart' show multipartFileFrom;
 import 'package:talawa/views/pages/_pages.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,16 +40,8 @@ class _CreateOrganizationState extends State<CreateOrganization> {
   bool isPublic = true;
   bool isVisible = true;
   GraphQLConfiguration graphQLConfiguration = GraphQLConfiguration();
-  FToast fToast;
   final AuthController _authController = AuthController();
   File _image;
-
-  @override
-  void initState() {
-    super.initState();
-    fToast = FToast();
-    fToast.init(context);
-  }
 
   void toggleProgressBarState() {
     _progressBarState = !_progressBarState;
@@ -94,12 +86,12 @@ class _CreateOrganizationState extends State<CreateOrganization> {
       setState(() {
         _progressBarState = false;
       });
-      _exceptionToast(result.exception.toString());
+      CustomToast.exceptionToast(msg: result.exception.toString());
     } else if (!result.hasException && !result.loading) {
       setState(() {
         _progressBarState = true;
       });
-      _successToast("Success!");
+      CustomToast.sucessToast(msg: "Success!");
       print(result.data);
 
       if (widget.isFromProfile) {
@@ -143,12 +135,12 @@ class _CreateOrganizationState extends State<CreateOrganization> {
       setState(() {
         _progressBarState = false;
       });
-      _exceptionToast(result.exception.toString());
+      CustomToast.exceptionToast(msg: result.exception.toString());
     } else if (!result.hasException && !result.loading) {
       setState(() {
         _progressBarState = true;
       });
-      _successToast("Sucess!");
+      CustomToast.sucessToast(msg: "Sucess!");
       print(result.data);
       if (widget.isFromProfile) {
         Navigator.pop(context);
@@ -197,8 +189,10 @@ class _CreateOrganizationState extends State<CreateOrganization> {
           child: Column(
             children: <Widget>[
               addImage(),
-              const Text("Upload Organization Image",
-                  style: TextStyle(fontSize: 16, color: Colors.black)),
+              const Text(
+                'Upload Organization Image',
+                style: const TextStyle(fontSize: 16, color: Colors.black),
+              ),
               Form(
                 key: _formKey,
                 autovalidateMode: _validate,
@@ -224,15 +218,16 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                             ],
                             validator: (value) =>
                                 Validator.validateOrgName(value),
-                            textInputAction: TextInputAction.next,
                             textAlign: TextAlign.left,
                             textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.next,
                             style: const TextStyle(color: Colors.black),
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: UIData.secondaryColor),
-                                  borderRadius: BorderRadius.circular(20.0)),
+                                borderSide: const BorderSide(
+                                    color: UIData.secondaryColor),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
                               prefixIcon: const Icon(
                                 Icons.group,
                                 color: UIData.secondaryColor,
@@ -262,11 +257,14 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                             style: const TextStyle(color: Colors.black),
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: UIData.secondaryColor),
-                                  borderRadius: BorderRadius.circular(20.0)),
-                              prefixIcon: const Icon(Icons.note,
-                                  color: UIData.secondaryColor),
+                                borderSide: const BorderSide(
+                                    color: UIData.secondaryColor),
+                                borderRadius: BorderRadius.circular(20.0),
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.note,
+                                color: UIData.secondaryColor,
+                              ),
                               labelText: "Organization Description",
                               labelStyle: const TextStyle(color: Colors.black),
                               alignLabelWithHint: true,
@@ -290,13 +288,16 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                                 Validator.validateOrgAttendeesDesc(value),
                             textAlign: TextAlign.left,
                             style: const TextStyle(color: Colors.black),
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  borderSide: const BorderSide(
-                                      color: UIData.secondaryColor)),
-                              prefixIcon: const Icon(Icons.note,
-                                  color: UIData.secondaryColor),
+                            decoration: new InputDecoration(
+                              border: new OutlineInputBorder(
+                                borderRadius: new BorderRadius.circular(20.0),
+                                borderSide: new BorderSide(
+                                    color: UIData.secondaryColor),
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.note,
+                                color: UIData.secondaryColor,
+                              ),
                               labelText: "Member Description",
                               labelStyle: const TextStyle(color: Colors.black),
                               alignLabelWithHint: true,
@@ -310,8 +311,11 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                           ),
                         ],
                       )),
-                      const Text('Do you want your organization to be public?',
-                          style: TextStyle(fontSize: 16, color: Colors.black)),
+                      const Text(
+                        'Do you want your organization to be public?',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                      ),
                       RadioListTile(
                         groupValue: radioValue,
                         title: const Text('Yes'),
@@ -346,8 +350,10 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                         },
                       ),
                       const Text(
-                          'Do you want others to be able to find your organization from the search page?',
-                          style: TextStyle(fontSize: 16, color: Colors.black)),
+                        'Do you want others to be able to find your organization from the search page?',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.black),
+                      ),
                       RadioListTile(
                         activeColor: UIData.secondaryColor,
                         groupValue: radioValue1,
@@ -383,7 +389,9 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 20.0, horizontal: 30.0),
+                          vertical: 20.0,
+                          horizontal: 30.0,
+                        ),
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -391,26 +399,27 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                               borderRadius: BorderRadius.circular(30.0),
                             ),
                           ),
-                          // ignore: sort_child_properties_last
                           child: _progressBarState
                               ? const Center(
-                                  child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
-                                        strokeWidth: 3,
-                                        backgroundColor: Colors.black,
-                                      )))
+                                  child: const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: const CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                      strokeWidth: 3,
+                                      backgroundColor: Colors.black,
+                                    ),
+                                  ),
+                                )
                               : const Text(
                                   "CREATE ORGANIZATION",
-                                  style: TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: Colors.white),
                                 ),
                           onPressed: _progressBarState
                               ? () {
-                                  _exceptionToast('Request in Progress');
+                                  CustomToast.exceptionToast(
+                                      msg: 'Request in Progress');
                                 }
                               : () async {
                                   if (_formKey.currentState.validate() &&
@@ -427,8 +436,8 @@ class _CreateOrganizationState extends State<CreateOrganization> {
                                     });
                                   } else if (radioValue < 0 ||
                                       radioValue1 < 0) {
-                                    _exceptionToast(
-                                        "A choice must be selected");
+                                    CustomToast.exceptionToast(
+                                        msg: "A choice must be selected");
                                   }
                                 },
                         ),
@@ -511,52 +520,10 @@ class _CreateOrganizationState extends State<CreateOrganization> {
           );
         });
   }
+}
 
-  void _successToast(String msg) {
-    final Widget toast = Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: SizeConfig.safeBlockHorizontal * 5,
-          vertical: SizeConfig.safeBlockVertical * 1.5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: Colors.green,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(msg),
-        ],
-      ),
-    );
-
-    fToast.showToast(
-      child: toast,
-      gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 1),
-    );
-  }
-
-  void _exceptionToast(String msg) {
-    final Widget toast = Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: SizeConfig.safeBlockHorizontal * 6,
-          vertical: SizeConfig.safeBlockVertical * 1.75),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: Colors.red,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(msg),
-        ],
-      ),
-    );
-
-    fToast.showToast(
-      child: toast,
-      gravity: ToastGravity.BOTTOM,
-      toastDuration: const Duration(seconds: 1),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+  // TODO: implement build
+  throw UnimplementedError();
 }
